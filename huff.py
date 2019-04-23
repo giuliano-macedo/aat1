@@ -42,11 +42,22 @@ class HuffNode:
 		ans=HuffNode(None,l.freq+r.freq)
 		ans.left,ans.right=l,r
 		return ans
-	def gentables(self,ans={},b=""):
-		if (self.left,self.right) == (None,None):
-			ans[b]=self.char
-		if self.left:self.left.gentables(ans,b+"0")
-		if self.right:self.right.gentables(ans,b+"1")
+	# STACK corruption????
+	# def gentables(self,ans={},b=""):
+	# 	if (self.left,self.right) == (None,None):
+	# 		ans[b]=self.char
+	# 	if self.left:self.left.gentables(ans,b+"0")
+	# 	if self.right:self.right.gentables(ans,b+"1")
+	# 	return dict((v,k)for k,v in ans.items()),ans
+	def gentables(self):
+		stack=[(self,"")]
+		ans={}
+		while(stack!=[]):
+			aux,b=stack.pop()
+			if (aux.left,aux.right) == (None,None):
+				ans[b]=aux.char
+			if aux.left:stack.append((aux.left,b+"0"))
+			if aux.right:stack.append((aux.right,b+"1"))
 		return dict((v,k)for k,v in ans.items()),ans
 	def print(self):
 		if self.left:self.left.print()
@@ -100,11 +111,11 @@ if __name__=="__main__":
 	def foo(data):
 		h=Huffman(data)
 		print("original    =",h.data)
+		print("codificado  =",bytes(str(h.coded),"utf-8"))
 		print("decodificado=",h.decoded)
 		print("medida de compressão:%f%%"%h.compressionrate)
 		print("--------------")
-		del h.coded
-		del h
-		del data
-	foo("ddceeaeecceecebaaebbaddbdcaddebdccdbebca")
+	
 	foo("abcdefghijklmnopqrst")
+	foo("ddceeaeecceecebaaebbaddbdcaddebdccdbebca")
+	# foo("ddceeaeecceecebaaebbaddbdcaddebdccdbebcaac")
