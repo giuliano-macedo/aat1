@@ -2,27 +2,33 @@ from collections import defaultdict
 from bisect import insort as appendsort
 class BinBuffer:
 	def __init__(self):
-		self.buff=bytes("",encoding="utf-8")
+		self.buff=""
 		self.byte=""
 		self.rb=0
 	def __str__(self):
 		return str(self.buff)
 	def __iter__(self):#bit itter till n-1 byte
 		haveFrag=(self.rb!=0)
-		lb=
-		for bit in((bin(byte)[2::]).zfill(8) for byte in self.buff[0:lb]):
-			yield bit
+		lb=-1 if haveFrag else None
+		for byte in self.buff[0:lb]:
+			for bit in (bin(ord(byte))[2::]).zfill(8):
+				yield bit
+		if haveFrag:
+			for bit in (bin(ord(self.buff[-1]))[2::]).zfill(8)[0:self.rb]:
+				yield bit
 	def __consumeByte(self):
-		self.buff+=bytes(chr(int(self.byte[0:8],2)),"utf-8")
+		self.buff+=chr(int(self.byte[0:8],2))
 		self.byte=self.byte[8:]
 	def append(self,s):
 		assert type(s)==str
 		self.byte+=s
 		while (len(self.byte)//8)!=0:
 			self.__consumeByte()
+	def __len__(self):
+		return len(self.buff)
 	def flush(self):
 		self.rb=len(self.byte) #quantidade de bits do ultimo byte
-		assert self.rb<8;
+		assert self.rb<8
 		if self.rb!=0:
 			self.byte=self.byte+("0"*(8-self.rb))
 			self.__consumeByte()
@@ -53,6 +59,8 @@ class HuffNode:
 	def __gt__(self,obj):
 		assert type(obj)==HuffNode
 		return self.freq>obj.freq
+def huffcompressionrate(data,coded):
+	return 100*((len(data)-len(coded))/len(data))
 def hufftable(s):
 	freq=defaultdict(int)
 	for l in s:
@@ -65,28 +73,38 @@ def hufftable(s):
 	return nodes[0].gentables()
 def huffcode(cotable,s):
 	ans=BinBuffer()
-	for l in data:
+	for l in s:
 		ans.append(cotable[l])
 	ans.flush()
-	assert ans.rb==0,ans.rb
 	return ans
 def huffdecode(detable,bb):
 	ans=""
 	temp=""
 	for bit in bb:
-		temp.append(bit)
+		temp+=bit
 		nb=detable.get(temp,None)
 		if nb!=None:
 			ans+=nb
 			temp=""
-	assert temp!=""
+	assert temp==""
 	return ans
-
-
-
-
-	
-data="ddceeaeecceecebaaebbaddbdcaddebdccdbebca"
-cotable,detable=hufftable(data)
-coded=huffcode(cotable,data)
-print(huffdecode(detable,coded))
+class Huffman:#wrapper
+	def __init__(self,data):
+		assert len(data)!=0
+		self.data=data
+		self.cotable,self.detable=hufftable(self.data)
+		self.coded=huffcode(self.cotable,self.data)
+		self.decoded=huffdecode(self.detable,self.coded)
+		self.compressionrate=huffcompressionrate(self.data,self.coded)
+if __name__=="__main__":
+	def foo(data):
+		h=Huffman(data)
+		print("original    =",h.data)
+		print("decodificado=",h.decoded)
+		print("medida de compressão:%f%%"%h.compressionrate)
+		print("--------------")
+		del h.coded
+		del h
+		del data
+	foo("ddceeaeecceecebaaebbaddbdcaddebdccdbebca")
+	foo("abcdefghijklmnopqrst")
