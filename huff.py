@@ -1,5 +1,6 @@
 from collections import defaultdict
-from bisect import insort as appendsort
+# from bisect import insort as appendsort
+from binsearch import appendsort
 class BinBuffer:
 	def __init__(self):
 		self.buff=""
